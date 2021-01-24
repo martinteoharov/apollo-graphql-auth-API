@@ -40,7 +40,7 @@ const typeDefs = gql(`
     }
 
     type Mutation {
-        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!): Tracker
+        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!): Boolean
         removeTracker(startDate: String!): Boolean
         login(username: String!, password: String!): String
         register(username: String!, password: String!): String
@@ -54,9 +54,9 @@ const resolvers = {
             return await context.models.User.getAllUsers();
         },
 
-        /* TRACKER */
+        /* Get all the trackers for a specific user.. */
         getAllTrackers: async (parent, args, context) => {
-            return await context.models.Tracker.getAllTrackers({ 'username': args.user.username });
+            return await context.models.Tracker.getAllTrackers({ 'username': context.user.username });
         },
     },
     Mutation: {
@@ -65,6 +65,9 @@ const resolvers = {
         login: async (parent, args, context) => {
             // Find user in DB..
             const user = await context.models.User.getUserByUsername({ username: args.username });
+
+            if(!user) return;
+
             if(user.password === args.password){
                 
                 // Generate JWT...
@@ -72,6 +75,7 @@ const resolvers = {
 
                 return token;
             }
+            // TODO: Send error codes..
             return "Something failed, it's probably your fault dummy";
         },
         register: async (parent, args, context) => {
@@ -83,12 +87,14 @@ const resolvers = {
             // Generate JWT...
             const token = jwt.sign(user, jwtSecret);
 
+            // TODO: Send error codes..
             return token || "Something failed, it's probably your fault dummy";
         },
 
         /* TRACKER */
         addTracker: async (parent, args, context) => {
-            return await context.models.Tracker.addTracker({ username: context.user.username, trackerName: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer });
+            console.log(args);
+            return !!(await context.models.Tracker.addTracker({ username: context.user.username, trackerName: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer }));
         },
         removeTracker: async (parent, args, context) => {
             return await context.models.Tracker.addTracker({ username: context.user.username, startDate: args.startDate });
@@ -111,25 +117,19 @@ const server = new ApolloServer({
      * Think of context as middleware ran before every resolver exec
     */
     context: ({ req }) => {
-        const authHeader = req.headers.authorization || '';
-        const token = authHeader && authHeader.split(' ')[1];
+        console.log("REQUEST!");
+        const token = req.headers.authorization.split(' ')[1].slice(0, -1);
+        if(!token) return;
 
         // Try to get the user from the token...
-        /*
+        let user;
         try {
-            const decoded = jwt.verify(token, jwtSecret);
-
-            // TODO: generate new JWT
-            if(!decoded) {
-                throw new AuthenticationError("You don't have permissions to do that.");
-            }
-
-        } catch(err) {
-            console.log(`ERROR: ${ err }`);
+            user = jwt.verify(token, jwtSecret);
+            console.log(user);
         }
-        */
-
-        const user = { username: 'martinteoharov', password: 'taina'};
+        catch (e){
+            console.log(`ERROR: ${e}`);
+        }
 
         return { 
             user,

@@ -5,6 +5,7 @@ const getAllTrackers = async ({ username }) => {
 }
 
 const addTracker = async ({ username, trackerName, startDate, endDate, timer }) => {
+    console.log('got here?', username, trackerName);
     return await mongo.getDB().collection('trackers').insertOne({ username, name:trackerName, startDate, endDate, timer });
 }
 
