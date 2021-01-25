@@ -1,4 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectId;
+
 const url = "mongodb://localhost:27017";
 
 var _db;
@@ -15,3 +17,4 @@ const getDB = () => {
 }
 module.exports.init = connect;
 module.exports.getDB = getDB;
+module.exports.ObjectId = ObjectId;

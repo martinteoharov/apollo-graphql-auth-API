@@ -26,6 +26,7 @@ const typeDefs = gql(`
     }
 
     type Tracker {
+        _id: String!
         username: String!
         name: String!
         startDate: String!
@@ -40,8 +41,8 @@ const typeDefs = gql(`
     }
 
     type Mutation {
-        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!): Boolean
-        removeTracker(startDate: String!): Boolean
+        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!): Tracker
+        removeTracker(_id: String!): Boolean
         login(username: String!, password: String!): String
         register(username: String!, password: String!): String
     }
@@ -56,7 +57,9 @@ const resolvers = {
 
         /* Get all the trackers for a specific user.. */
         getAllTrackers: async (parent, args, context) => {
-            return await context.models.Tracker.getAllTrackers({ 'username': context.user.username });
+            const trackers = await context.models.Tracker.getAllTrackers({ 'username': context.user.username });
+            console.log('FETCH: getAllTrackers');
+            return trackers;
         },
     },
     Mutation: {
@@ -93,11 +96,12 @@ const resolvers = {
 
         /* TRACKER */
         addTracker: async (parent, args, context) => {
-            console.log(args);
-            return !!(await context.models.Tracker.addTracker({ username: context.user.username, trackerName: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer }));
+            const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer });
+            return tracker;
         },
+
         removeTracker: async (parent, args, context) => {
-            return await context.models.Tracker.addTracker({ username: context.user.username, startDate: args.startDate });
+            return !!(await context.models.Tracker.deleteTracker({ username: context.user.username, _id: args._id }));
         },
     }
 }
@@ -117,15 +121,13 @@ const server = new ApolloServer({
      * Think of context as middleware ran before every resolver exec
     */
     context: ({ req }) => {
-        console.log("REQUEST!");
         const token = req.headers.authorization.split(' ')[1].slice(0, -1);
-        if(!token) return;
 
         // Try to get the user from the token...
         let user;
         try {
             user = jwt.verify(token, jwtSecret);
-            console.log(user);
+            console.log(`INFO: Decoded User: ${user}`);
         }
         catch (e){
             console.log(`ERROR: ${e}`);
