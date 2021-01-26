@@ -7,6 +7,7 @@ const { ApolloServer, gql } = require('apollo-server');
 const { User, Tracker } = require('./models/index');
 const mongo = require('./db/mongoUtil');
 const jwt = require('jsonwebtoken');
+const colors = require('./colors');
 
 const jwtSecret = "asdasd";
 
@@ -36,6 +37,7 @@ const typeDefs = gql(`
 
     type Query {
         getAllTrackers: [Tracker]
+        getTrackersByDate(startDate: String!): [Tracker]
     }
 
     type Mutation {
@@ -50,13 +52,20 @@ const resolvers = {
     Query: {
         /* Get all the trackers for a specific user.. */
         getAllTrackers: async (parent, args, context) => {
-            const trackers = await context.models.Tracker.getAllTrackers({ 'username': context.user.username });
             console.log('FETCH: getAllTrackers');
+            const trackers = await context.models.Tracker.getAllTrackers({ 'username': context.user.username });
+            return trackers;
+        },
+        getTrackersByDate: async (parent, args, context) => {
+            console.log('FETCH: getTrackersByDate');
+            const trackers = await context.models.Tracker.getTrackersByDate({ 'username': context.user.username, startDate: args.startDate });
             return trackers;
         },
     },
     Mutation: {
         login: async (parent, args, context) => {
+            console.log('MUTATE: login');
+
             // Find user in DB..
             const user = await context.models.User.getUserByUsername({ username: args.username });
             if(!user) return;
@@ -66,24 +75,30 @@ const resolvers = {
                 return token;
             }
             // TODO: Send error codes..
-            return "Something failed, it's probably your fault dummy";
+            return null;
         },
         register: async (parent, args, context) => {
+            console.log('MUTATE: register');
+
             const user = { username: args.username, password: args.password };
             // Add user to DB...
             const res = await context.models.User.addUser(user);
             // Generate JWT...
             const token = jwt.sign(user, jwtSecret);
             // TODO: Send error codes..
-            return token || "Something failed, it's probably your fault dummy";
+            return token || null;
         },
 
         addTracker: async (parent, args, context) => {
+            console.log('MUTATE: addTracker');
+
             const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer });
             return tracker;
         },
 
         removeTracker: async (parent, args, context) => {
+            console.log('MUTATE: removeTracker');
+
             return !!(await context.models.Tracker.deleteTracker({ username: context.user.username, _id: args._id }));
         },
     }
@@ -101,6 +116,7 @@ const server = new ApolloServer({
      * auth here
     */
     context: ({ req }) => {
+        console.log(colors.FgBlack, '====================================================================', colors.Reset);
         console.log(`REQUEST: Req Referer: ${ req.headers.referer }`);
         console.log(`REQUEST: Req Operation: ${ req.body.operationName }`);
 
@@ -113,7 +129,9 @@ const server = new ApolloServer({
         }
 
         if(req.headers.authorization){
-            token = req.headers.authorization.split(' ')[1];
+            // For some reason chrome sends an additional comma??
+            token = req.headers.authorization.split(' ')[1].replace(',', '');
+
             try {
                 user = jwt.verify(token, jwtSecret);
                 console.log(`INFO: Decoded User: ${ JSON.stringify(user) }`);
