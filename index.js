@@ -33,6 +33,8 @@ const typeDefs = gql(`
         startDate: String!
         endDate: String!
         timer: String!
+        projects: [String]
+        tags: [String]
     }
 
     type Query {
@@ -41,7 +43,7 @@ const typeDefs = gql(`
     }
 
     type Mutation {
-        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!): Tracker
+        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!, projects: [String], tags: [String]): Tracker
         removeTracker(_id: String!): Boolean
         login(username: String!, password: String!): String
         register(username: String!, password: String!): String
@@ -92,7 +94,7 @@ const resolvers = {
         addTracker: async (parent, args, context) => {
             console.log('MUTATE: addTracker');
 
-            const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer });
+            const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer, projects: args.projects, tags: args.tags });
             return tracker;
         },
 

@@ -7,9 +7,9 @@ const getTrackersByDate = async ({ username, startDate }) => {
     return await mongo.getDB().collection('trackers').find({ username, startDate }).toArray();
 }
 
-const addTracker = async ({ username, name, startDate, endDate, timer }) => {
-    await mongo.getDB().collection('trackers').insertOne({ username, name, startDate, endDate, timer });
-    const entry = await mongo.getDB().collection('trackers').find({ username, name, startDate, endDate, timer }).toArray();
+const addTracker = async ({ username, name, startDate, endDate, timer, projects, tags }) => {
+    await mongo.getDB().collection('trackers').insertOne({ username, name, startDate, endDate, timer, projects, tags });
+    const entry = await mongo.getDB().collection('trackers').find({ username, name, startDate, endDate, timer, projects, tags }).toArray();
     return entry[0];
 }
 
