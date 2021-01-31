@@ -32,6 +32,7 @@ const typeDefs = gql(`
         name: String!
         startDate: String!
         endDate: String!
+        simpleDate: String!
         timer: String!
         projects: [String]
         tags: [String]
@@ -39,11 +40,11 @@ const typeDefs = gql(`
 
     type Query {
         getAllTrackers: [Tracker]
-        getTrackersByDate(startDate: String!): [Tracker]
+        getTrackersByDate(simpleDate: String!): [Tracker]
     }
 
     type Mutation {
-        addTracker(name: String!, startDate: String!, endDate: String!, timer: String!, projects: [String], tags: [String]): Tracker
+        addTracker(name: String!, startDate: String!, endDate: String!, simpleDate: String!, timer: String!, projects: [String], tags: [String]): Tracker
         removeTracker(_id: String!): Boolean
         login(username: String!, password: String!): String
         register(username: String!, password: String!): String
@@ -60,7 +61,7 @@ const resolvers = {
         },
         getTrackersByDate: async (parent, args, context) => {
             console.log('FETCH: getTrackersByDate');
-            const trackers = await context.models.Tracker.getTrackersByDate({ 'username': context.user.username, startDate: args.startDate });
+            const trackers = await context.models.Tracker.getTrackersByDate({ 'username': context.user.username, simpleDate: args.simpleDate });
             return trackers;
         },
     },
@@ -94,7 +95,7 @@ const resolvers = {
         addTracker: async (parent, args, context) => {
             console.log('MUTATE: addTracker');
 
-            const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, timer: args.timer, projects: args.projects, tags: args.tags });
+            const tracker = await context.models.Tracker.addTracker({ username: context.user.username, name: args.name, startDate: args.startDate, endDate: args.endDate, simpleDate: args.simpleDate, timer: args.timer, projects: args.projects, tags: args.tags });
             return tracker;
         },
 
