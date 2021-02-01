@@ -4,7 +4,7 @@
  */
 
 const { ApolloServer, gql } = require('apollo-server');
-const { User, Tracker } = require('./models/index');
+const { User, Tracker, Project } = require('./models/index');
 const mongo = require('./db/mongoUtil');
 const jwt = require('jsonwebtoken');
 const colors = require('./colors');
@@ -38,16 +38,29 @@ const typeDefs = gql(`
         tags: [String]
     }
 
+    type Project {
+        username: String!
+        name: String!
+        accumulatedTime: String!
+        entries: [Tracker]
+        dateCreated: String!
+    }
+
     type Query {
         getAllTrackers: [Tracker]
         getTrackersByDate(simpleDate: String!): [Tracker]
+
+        getAllProjects: [Project]
     }
 
     type Mutation {
-        addTracker(name: String!, startDate: String!, endDate: String!, simpleDate: String!, timer: String!, projects: [String], tags: [String]): Tracker
-        removeTracker(_id: String!): Boolean
         login(username: String!, password: String!): String
         register(username: String!, password: String!): String
+
+        addTracker(name: String!, startDate: String!, endDate: String!, simpleDate: String!, timer: String!, projects: [String], tags: [String]): Tracker
+        removeTracker(_id: String!): Boolean
+
+        addProject(name: String!): Boolean
     }
 `);
 
@@ -63,6 +76,13 @@ const resolvers = {
             console.log('FETCH: getTrackersByDate');
             const trackers = await context.models.Tracker.getTrackersByDate({ 'username': context.user.username, simpleDate: args.simpleDate });
             return trackers;
+        },
+
+        getAllProjects: async (parent, args, context) => {
+            console.log('FETCH: getAllProjects');
+
+            const projects = await context.models.Project.getAllProjects({ 'username': context.user.username });
+            return projects;
         },
     },
     Mutation: {
@@ -104,6 +124,12 @@ const resolvers = {
 
             return !!(await context.models.Tracker.deleteTracker({ username: context.user.username, _id: args._id }));
         },
+
+        addProject: async (parent, args, context) => {
+            console.log('MUTATE: addProject');
+
+            return !!(await context.models.Project.addProject({ username: context.user.username, name: args.name }));
+        }
     }
 }
 
@@ -124,7 +150,7 @@ const server = new ApolloServer({
         console.log(`REQUEST: Req Operation: ${ req.body.operationName }`);
 
         let user, token;
-        const models = { models: { User, Tracker }};
+        const models = { models: { User, Tracker, Project }};
 
         if(req.body.operationName === 'Login' || req.body.operationName === 'Register'){
             //console.log(`Return ${JSON.stringify({ ...models, user: null })}`);
