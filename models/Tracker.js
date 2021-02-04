@@ -1,4 +1,5 @@
 const mongo = require('../db/mongoUtil');
+const Project = require('./Project');
 
 const getAllTrackers = async ({ username }) => {
     return await mongo.getDB().collection('trackers').find({ username }).toArray();
@@ -10,6 +11,12 @@ const getTrackersByDate = async ({ username, simpleDate }) => {
 const addTracker = async ({ username, name, startDate, endDate, simpleDate, timer, projects, tags }) => {
     await mongo.getDB().collection('trackers').insertOne({ username, name, startDate, simpleDate, endDate, timer, projects, tags });
     const entry = await mongo.getDB().collection('trackers').find({ username, name, startDate, endDate, simpleDate, timer, projects, tags }).toArray();
+
+    // Add projects
+    for(const name of projects){
+        await Project.addProject({ username, name });
+    }
+
     return entry[0];
 }
 

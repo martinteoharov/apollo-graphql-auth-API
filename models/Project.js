@@ -9,7 +9,7 @@ const getAllProjects = async ({ username }) => {
 const addProject = async ({ username, name }) => {
     const entry = await mongo.getDB().collection('projects').find({ username, name }).toArray();
 
-    if(!entry) 
+    if(entry[0]) 
         return false;
 
     await mongo.getDB().collection('projects').insertOne({ username, name });
